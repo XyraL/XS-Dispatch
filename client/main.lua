@@ -8,9 +8,9 @@ local function streetName(coords)
 end
 
 local function refresh(open)
-    local nextState = lib.callback.await('cipher-dispatch:server:getState', false)
+    local nextState = lib.callback.await('XS-Dispatch:server:getState', false)
     if not nextState then
-        if open then lib.notify({ title = 'Cipher Dispatch', description = 'You must be an on-duty responder.', type = 'error' }) end
+        if open then lib.notify({ title = 'XS-Dispatch', description = 'You must be an on-duty responder.', type = 'error' }) end
         return false
     end
     currentState = nextState; RenderTracking(nextState); nextState.mySource = GetPlayerServerId(PlayerId())
@@ -44,7 +44,7 @@ end
 
 local function respond(call)
     if not call then return false end
-    local ok, accepted = lib.callback.await('cipher-dispatch:server:respond', false, call.id)
+    local ok, accepted = lib.callback.await('XS-Dispatch:server:respond', false, call.id)
     if ok then
         local routed = RouteCall(accepted)
         showQuick(false)
@@ -52,7 +52,7 @@ local function respond(call)
             lib.notify({ title = 'Dispatch Route', description = ('GPS set to %s'):format(accepted.street or accepted.title), type = 'success' })
         end
         if Config.Radio.autoJoinOperations then
-            TriggerEvent('cipher-dispatch:client:joinOperationRadio', accepted.operation.channel)
+            TriggerEvent('XS-Dispatch:client:joinOperationRadio', accepted.operation.channel)
         end
     end
     return ok
@@ -63,36 +63,36 @@ local function setOpen(value)
     isOpen = value; SetNuiFocus(value, value); SendNUIMessage({ action = value and 'open' or 'close' })
 end
 
-RegisterCommand('cipher_dispatch', function() setOpen(not isOpen) end, false)
-RegisterKeyMapping('cipher_dispatch', 'Cipher Dispatch Console', 'keyboard', Config.OpenKey)
-RegisterCommand('cipher_dispatch_panic', function() TriggerServerEvent('cipher-dispatch:server:panic') end, false)
-RegisterKeyMapping('cipher_dispatch_panic', 'Cipher Dispatch Panic Button', 'keyboard', Config.Panic.key)
-RegisterCommand('cipher_dispatch_quick', function() showQuick(not quickVisible) end, false)
-RegisterKeyMapping('cipher_dispatch_quick', 'Cipher Dispatch Quick Responder', 'keyboard', Config.QuickOverlayKey)
-RegisterCommand('cipher_dispatch_respond', function() respond(latestCall or assignedCall()) end, false)
-RegisterKeyMapping('cipher_dispatch_respond', 'Cipher Dispatch Respond To Latest Call', 'keyboard', Config.QuickRespondKey)
-RegisterCommand('cipher_dispatch_radio', function()
+RegisterCommand('xs_dispatch', function() setOpen(not isOpen) end, false)
+RegisterKeyMapping('xs_dispatch', 'XS-Dispatch Console', 'keyboard', Config.OpenKey)
+RegisterCommand('xs_dispatch_panic', function() TriggerServerEvent('XS-Dispatch:server:panic') end, false)
+RegisterKeyMapping('xs_dispatch_panic', 'XS-Dispatch Panic Button', 'keyboard', Config.Panic.key)
+RegisterCommand('xs_dispatch_quick', function() showQuick(not quickVisible) end, false)
+RegisterKeyMapping('xs_dispatch_quick', 'XS-Dispatch Quick Responder', 'keyboard', Config.QuickOverlayKey)
+RegisterCommand('xs_dispatch_respond', function() respond(latestCall or assignedCall()) end, false)
+RegisterKeyMapping('xs_dispatch_respond', 'XS-Dispatch Respond To Latest Call', 'keyboard', Config.QuickRespondKey)
+RegisterCommand('xs_dispatch_radio', function()
     local call = assignedCall()
-    if call and call.operation then TriggerEvent('cipher-dispatch:client:joinOperationRadio', call.operation.channel) end
+    if call and call.operation then TriggerEvent('XS-Dispatch:client:joinOperationRadio', call.operation.channel) end
 end, false)
-RegisterKeyMapping('cipher_dispatch_radio', 'Cipher Dispatch Join Operation Radio', 'keyboard', Config.RadioKey)
+RegisterKeyMapping('xs_dispatch_radio', 'XS-Dispatch Join Operation Radio', 'keyboard', Config.RadioKey)
 
 RegisterCommand('911', function(_, args)
     local message = table.concat(args, ' ')
     if #message < 3 then return lib.notify({ description = 'Usage: /911 [emergency]', type = 'error' }) end
     local coords = GetEntityCoords(PlayerPedId())
-    TriggerServerEvent('cipher-dispatch:server:civilianCall', '911', message, streetName(coords))
+    TriggerServerEvent('XS-Dispatch:server:civilianCall', '911', message, streetName(coords))
     lib.notify({ title = '911', description = 'Your emergency call was submitted.', type = 'success' })
 end, false)
 
-RegisterNetEvent('cipher-dispatch:client:state', function(nextState)
+RegisterNetEvent('XS-Dispatch:client:state', function(nextState)
     currentState = nextState; RenderTracking(nextState); nextState.mySource = GetPlayerServerId(PlayerId())
     if isOpen then SendNUIMessage({ action = 'state', payload = nextState }) end
     SendNUIMessage({ action = 'quickState', payload = nextState })
     if Config.QuickOverlay.showWhileAssigned then showQuick(assignedCall() ~= nil or quickVisible) end
 end)
 
-RegisterNetEvent('cipher-dispatch:client:delta', function(delta)
+RegisterNetEvent('XS-Dispatch:client:delta', function(delta)
     if not currentState or type(delta) ~= 'table' then return end
     local kind, payload = delta.kind, delta.payload
     local collection = kind and kind:find('unit:', 1, true) == 1 and currentState.units or currentState.calls
@@ -108,7 +108,7 @@ RegisterNetEvent('cipher-dispatch:client:delta', function(delta)
     SendNUIMessage({ action = 'quickState', payload = currentState })
 end)
 
-RegisterNetEvent('cipher-dispatch:client:newCall', function(call)
+RegisterNetEvent('XS-Dispatch:client:newCall', function(call)
     latestCall = call
     SendNUIMessage({ action = 'alert', payload = call })
     if Config.QuickOverlay.enabled then
@@ -134,28 +134,28 @@ RegisterNUICallback('route', function(data, cb)
     if routed then lib.notify({ title = 'Dispatch Route', description = 'GPS route updated.', type = 'success' }) end
     cb({ ok = routed })
 end)
-RegisterNUICallback('clear', function(data, cb) cb({ ok = lib.callback.await('cipher-dispatch:server:clearCall', false, data.id) }) end)
-RegisterNUICallback('status', function(data, cb) cb({ ok = lib.callback.await('cipher-dispatch:server:setStatus', false, data.status) }) end)
+RegisterNUICallback('clear', function(data, cb) cb({ ok = lib.callback.await('XS-Dispatch:server:clearCall', false, data.id) }) end)
+RegisterNUICallback('status', function(data, cb) cb({ ok = lib.callback.await('XS-Dispatch:server:setStatus', false, data.status) }) end)
 RegisterNUICallback('leaveCall', function(data, cb)
-    local ok = lib.callback.await('cipher-dispatch:server:leaveCall', false, data.id)
+    local ok = lib.callback.await('XS-Dispatch:server:leaveCall', false, data.id)
     if ok then showQuick(false) end
     cb({ ok = ok })
 end)
 RegisterNUICallback('joinRadio', function(data, cb)
     local channel = tonumber(data.channel)
-    if channel then TriggerEvent('cipher-dispatch:client:joinOperationRadio', channel) end
+    if channel then TriggerEvent('XS-Dispatch:client:joinOperationRadio', channel) end
     cb({ ok = channel ~= nil })
 end)
-RegisterNUICallback('getIntegrations', function(_, cb) cb(lib.callback.await('cipher-dispatch:server:getIntegrations', false) or {}) end)
-RegisterNUICallback('getIntegrationHealth', function(_, cb) cb(lib.callback.await('cipher-dispatch:server:getIntegrationHealth', false) or {}) end)
+RegisterNUICallback('getIntegrations', function(_, cb) cb(lib.callback.await('XS-Dispatch:server:getIntegrations', false) or {}) end)
+RegisterNUICallback('getIntegrationHealth', function(_, cb) cb(lib.callback.await('XS-Dispatch:server:getIntegrationHealth', false) or {}) end)
 RegisterNUICallback('saveIntegration', function(data, cb)
-    local ok, result = lib.callback.await('cipher-dispatch:server:saveIntegration', false, data)
+    local ok, result = lib.callback.await('XS-Dispatch:server:saveIntegration', false, data)
     cb({ ok = ok, result = result })
 end)
-RegisterNUICallback('deleteIntegration', function(data, cb) cb({ ok = lib.callback.await('cipher-dispatch:server:deleteIntegration', false, data.id) }) end)
-RegisterNUICallback('getProfile', function(_, cb) cb(lib.callback.await('cipher-dispatch:server:getProfile', false) or {}) end)
+RegisterNUICallback('deleteIntegration', function(data, cb) cb({ ok = lib.callback.await('XS-Dispatch:server:deleteIntegration', false, data.id) }) end)
+RegisterNUICallback('getProfile', function(_, cb) cb(lib.callback.await('XS-Dispatch:server:getProfile', false) or {}) end)
 RegisterNUICallback('saveProfile', function(data, cb)
-    local ok, result = lib.callback.await('cipher-dispatch:server:saveProfile', false, data)
+    local ok, result = lib.callback.await('XS-Dispatch:server:saveProfile', false, data)
     if ok then refresh(false) end
     cb({ ok = ok, result = result })
 end)
@@ -171,7 +171,7 @@ RegisterNUICallback('routeUnit', function(data, cb)
     cb({ ok = false })
 end)
 
-RegisterNetEvent('cipher-dispatch:client:joinOperationRadio', function(channel)
+RegisterNetEvent('XS-Dispatch:client:joinOperationRadio', function(channel)
     if not Config.Radio.enabled or GetResourceState(Config.Radio.resource) ~= 'started' then
         return lib.notify({ title = 'Operational Radio', description = 'Voice integration is unavailable.', type = 'error' })
     end
@@ -190,10 +190,10 @@ CreateThread(function()
             if call and unit then
                 local distance = #(GetEntityCoords(PlayerPedId()) - vector3(call.coords.x, call.coords.y, call.coords.z))
                 if distance <= Config.AutoStatus.arrivalRadius and unit.status == Config.AutoStatus.enRouteStatus then
-                    lib.callback.await('cipher-dispatch:server:setStatus', false, Config.AutoStatus.arrivalStatus)
+                    lib.callback.await('XS-Dispatch:server:setStatus', false, Config.AutoStatus.arrivalStatus)
                     arrivedAt = call.id
                 elseif distance > Config.AutoStatus.leaveRadius and arrivedAt == call.id and unit.status == Config.AutoStatus.arrivalStatus then
-                    lib.callback.await('cipher-dispatch:server:setStatus', false, Config.AutoStatus.enRouteStatus)
+                    lib.callback.await('XS-Dispatch:server:setStatus', false, Config.AutoStatus.enRouteStatus)
                     arrivedAt = nil
                 end
             else arrivedAt = nil end

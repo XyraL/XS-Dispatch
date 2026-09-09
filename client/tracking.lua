@@ -93,7 +93,7 @@ CreateThread(function()
             if department and (not Config.OnDutyOnly or pd.job.onduty) then
                 local ped, coords = PlayerPedId(), GetEntityCoords(PlayerPedId())
                 local class, label = vehicleClass()
-                TriggerServerEvent('cipher-dispatch:server:position', { x = coords.x, y = coords.y, z = coords.z, heading = GetEntityHeading(ped), vehicleClass = class, vehicleLabel = label })
+                TriggerServerEvent('XS-Dispatch:server:position', { x = coords.x, y = coords.y, z = coords.z, heading = GetEntityHeading(ped), vehicleClass = class, vehicleLabel = label })
             elseif state then RenderTracking({ units = {}, calls = {}, department = nil }) end
         end
     end

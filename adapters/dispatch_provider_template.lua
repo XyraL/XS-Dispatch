@@ -1,6 +1,6 @@
 -- Copy into a separate adapter resource and replace the TODO calls.
 CreateThread(function()
-    exports['cipher-mdt']:RegisterDispatchProvider('my-dispatch', {
+    exports['XS-MDT']:RegisterDispatchProvider('my-dispatch', {
         resource = GetCurrentResourceName(),
         priority = 50,
         getActiveCalls = function()
@@ -23,8 +23,8 @@ end)
 
 -- Push external changes back to the MDT without creating a hard dependency.
 local function pushToMdt(action, call, revision)
-    if GetResourceState('cipher-mdt') ~= 'started' then return end
-    exports['cipher-mdt']:IngestDispatchUpdate(action, call, {
+    if GetResourceState('XS-MDT') ~= 'started' then return end
+    exports['XS-MDT']:IngestDispatchUpdate(action, call, {
         origin = GetCurrentResourceName(), revision = revision,
     })
 end

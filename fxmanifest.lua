@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 
-name 'cipher-dispatch'
+name 'XS-Dispatch'
 description 'Multi-department live dispatch and unit tracking for QBox/QBCore'
 author 'XyraL'
 version '1.0.0'

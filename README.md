@@ -1,16 +1,16 @@
-<h1 align="center">Cipher Dispatch</h1>
+<h1 align="center">XS-Dispatch</h1>
 
 <p align="center">Multi-department live dispatch and responder tracking for <strong>QBox</strong> and <strong>QBCore</strong>.</p>
 
 <p align="center">
-  <a href="https://github.com/XyraL/cipher-dispatch/releases"><img src="https://img.shields.io/github/v/release/XyraL/cipher-dispatch?style=flat-square&color=55e2ad&label=release" alt="Latest release"></a>
+  <a href="https://github.com/XyraL/XS-Dispatch/releases"><img src="https://img.shields.io/github/v/release/XyraL/XS-Dispatch?style=flat-square&color=55e2ad&label=release" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/framework-QBox%20%7C%20QBCore-55dcff?style=flat-square" alt="framework">
   <img src="https://img.shields.io/badge/price-free-30d158?style=flat-square" alt="price">
   <a href="https://discord.gg/XRURAw4TM2"><img src="https://img.shields.io/badge/support-discord-5865F2?style=flat-square" alt="support"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/XyraL/cipher-dispatch/releases">Releases</a> &nbsp;·&nbsp;
+  <a href="https://github.com/XyraL/XS-Dispatch/releases">Releases</a> &nbsp;·&nbsp;
   <a href="https://discord.gg/XRURAw4TM2">Support</a>
 </p>
 
@@ -50,25 +50,25 @@
 Start after the framework and dependencies:
 
 ```cfg
-ensure cipher-dispatch
+ensure XS-Dispatch
 ```
 
-The default console key is **F6** and panic key is **F5**. Both are rebindable in GTA settings. These defaults deliberately avoid Cipher MDT's existing F10/F11 bindings.
+The default console key is **F6** and panic key is **F5**. Both are rebindable in GTA settings. These defaults deliberately avoid XS-MDT's existing F10/F11 bindings.
 
 To allow Integration Studio access:
 
 ```cfg
-add_ace group.admin cipher.dispatch.integrations allow
+add_ace group.admin xs.dispatch.integrations allow
 ```
 
 Custom presets are stored in `data/integrations.json`. The studio cannot overwrite built-in call types.
 
 ## Compatibility architecture
 
-External resources should integrate through providers and exports rather than editing Cipher Dispatch. Provider registration:
+External resources should integrate through providers and exports rather than editing XS-Dispatch. Provider registration:
 
 ```lua
-exports['cipher-dispatch']:RegisterProvider('phone', 'my-phone', {
+exports['XS-Dispatch']:RegisterProvider('phone', 'my-phone', {
     sendStatus = function(call, status) end,
     sendMessage = function(call, message) end,
 })
@@ -77,7 +77,7 @@ exports['cipher-dispatch']:RegisterProvider('phone', 'my-phone', {
 Rich call fields can be extended at runtime:
 
 ```lua
-exports['cipher-dispatch']:RegisterFieldType('alarm_zone', {
+exports['XS-Dispatch']:RegisterFieldType('alarm_zone', {
     label = 'Alarm Zone',
     icon = 'sensor',
 })
@@ -86,27 +86,27 @@ exports['cipher-dispatch']:RegisterFieldType('alarm_zone', {
 Call lifecycle API:
 
 ```lua
-exports['cipher-dispatch']:UpdateCall(callId, { priority = 1 })
-exports['cipher-dispatch']:AddCallNote(callId, {
+exports['XS-Dispatch']:UpdateCall(callId, { priority = 1 })
+exports['XS-Dispatch']:AddCallNote(callId, {
     author = 'Bank Alarm',
     text = 'Rear motion sensor activated.',
 })
-exports['cipher-dispatch']:LinkMdtRecord(callId, 'cipher-mdt', incidentId)
+exports['XS-Dispatch']:LinkMdtRecord(callId, 'XS-MDT', incidentId)
 ```
 
-Phone adapters submit emergency data with `SubmitPhoneEmergency` or the server event `cipher-dispatch:server:phoneEmergency`. They can listen for `cipher-dispatch:provider:phone:callerUpdate` to deliver responder messages back to callers.
+Phone adapters submit emergency data with `SubmitPhoneEmergency` or the server event `XS-Dispatch:server:phoneEmergency`. They can listen for `XS-Dispatch:provider:phone:callerUpdate` to deliver responder messages back to callers.
 
-MDT adapters consume `cipher-dispatch:provider:mdt:callCreated` and `cipher-dispatch:provider:mdt:callClosed`. Cipher Dispatch never reads another resource's database tables.
+MDT adapters consume `XS-Dispatch:provider:mdt:callCreated` and `XS-Dispatch:provider:mdt:callClosed`. XS-Dispatch never reads another resource's database tables.
 
-MDTs can supply responder callsigns without Cipher knowing their schema:
+MDTs can supply responder callsigns without XS-Dispatch knowing their schema:
 
 ```lua
-exports['cipher-dispatch']:RegisterIdentityProvider('my-mdt', function(source)
+exports['XS-Dispatch']:RegisterIdentityProvider('my-mdt', function(source)
     return exports['my-mdt']:GetDispatchIdentity(source)
 end)
 ```
 
-The identity must return `{ callsign, badge?, unitType? }`. Export-based MDTs can also be added to `Config.MdtIdentityAdapters`. Resolution order is registered MDT provider, framework metadata, saved Dispatch profile, then generated fallback. Cipher MDT support is included natively.
+The identity must return `{ callsign, badge?, unitType? }`. Export-based MDTs can also be added to `Config.MdtIdentityAdapters`. Resolution order is registered MDT provider, framework metadata, saved Dispatch profile, then generated fallback. XS-MDT support is included natively.
 
 ## Operational units
 
@@ -118,7 +118,7 @@ The server callbacks `createUnit`, `joinUnit`, and `leaveUnit` support multi-mem
 Server-side resources can create fully customized calls:
 
 ```lua
-local callId, call = exports['cipher-dispatch']:CreateCall({
+local callId, call = exports['XS-Dispatch']:CreateCall({
     type = 'fire',
     title = 'Commercial Structure Fire',
     description = 'Multiple callers report smoke from the roof.',
@@ -135,15 +135,15 @@ local callId, call = exports['cipher-dispatch']:CreateCall({
 Other server exports:
 
 ```lua
-exports['cipher-dispatch']:GetCall(callId)
-exports['cipher-dispatch']:GetActiveCalls()
+exports['XS-Dispatch']:GetCall(callId)
+exports['XS-Dispatch']:GetActiveCalls()
 ```
 
 Events are also emitted for integrations:
 
 ```lua
-AddEventHandler('cipher-dispatch:server:callCreated', function(call) end)
-AddEventHandler('cipher-dispatch:server:callClosed', function(call, closedBy) end)
+AddEventHandler('XS-Dispatch:server:callCreated', function(call) end)
+AddEventHandler('XS-Dispatch:server:callClosed', function(call, closedBy) end)
 ```
 
 ## Unique department tracking
@@ -161,30 +161,30 @@ This lets Fire apparatus remain visually distinct from EMS ambulances and Police
 
 ## Operational radio
 
-Every incident receives an operation ID and TAC channel. With `pma-voice` running, assigned responders can press **I** to join that channel. Automatic channel switching is disabled by default so Cipher Dispatch does not unexpectedly pull players away from their existing radio channel; enable it with `Config.Radio.autoJoinOperations`.
+Every incident receives an operation ID and TAC channel. With `pma-voice` running, assigned responders can press **I** to join that channel. Automatic channel switching is disabled by default so XS-Dispatch does not unexpectedly pull players away from their existing radio channel; enable it with `Config.Radio.autoJoinOperations`.
 
 ## Documentation
 
 Full setup guide, requirements and troubleshooting:
-**[xyralscripts.dev/docs-cipher-dispatch](https://xyralscripts.dev/docs-cipher-dispatch)**
+**[xyralscripts.dev/docs-xs-dispatch](https://xyralscripts.dev/docs-xs-dispatch)**
 
 ## Support
 
-- **Found a bug?** [Open an issue](https://github.com/XyraL/cipher-dispatch/issues)
+- **Found a bug?** [Open an issue](https://github.com/XyraL/XS-Dispatch/issues)
 - **Need setup help?** [Join the Discord](https://discord.gg/XRURAw4TM2) — check the setup guide first, it usually has the answer
 
-## The rest of the Cipher line
+## My other scripts
 
 All free, all source-available.
 
 | Script | What it is |
 |---|---|
-| **[Cipher](https://github.com/XyraL/cipher)** | modular criminal device for QBox and QBCore — gang ops, blackmarket and boosting in one encrypted tablet. |
-| **[Cipher MDT](https://github.com/XyraL/cipher-mdt)** | multi-department MDT for QBox — police, EMS and fire with live CAD, records, patient care and a live unit map. |
-| **[Cipher Admin](https://github.com/XyraL/cipher-admin)** | advanced admin suite for QBox and QBCore — player management, bans, reports, inventory tools and entity inspection. |
-| **[Cipher Drone](https://github.com/XyraL/cipher-drone)** | deployable police drone for QBox and QBCore — smooth flight, thermal, spotlight, tracker darts and real counterplay. |
-| **[Cipher Trucking](https://github.com/XyraL/cipher-trucking)** | civilian trucking job for QBox and QBCore — live route map, truck ownership, fuel and maintenance, and companies. |
-| **[Cipher MultiCharacter](https://github.com/XyraL/cipher-multicharacter)** | cinematic character selection for QBox and QBCore — identity dossiers, saved appearances, spawn cameras and configurable slots. |
+| **[XS-CriminalTablet](https://github.com/XyraL/XS-CriminalTablet)** | modular criminal device for QBox and QBCore — gang ops, blackmarket and boosting in one encrypted tablet. |
+| **[XS-MDT](https://github.com/XyraL/XS-MDT)** | multi-department MDT for QBox — police, EMS and fire with live CAD, records, patient care and a live unit map. |
+| **[XS-AdminMenu](https://github.com/XyraL/XS-AdminMenu)** | advanced admin suite for QBox and QBCore — player management, bans, reports, inventory tools and entity inspection. |
+| **[XS-Drone](https://github.com/XyraL/XS-Drone)** | deployable police drone for QBox and QBCore — smooth flight, thermal, spotlight, tracker darts and real counterplay. |
+| **[XS-Trucking](https://github.com/XyraL/XS-Trucking)** | civilian trucking job for QBox and QBCore — live route map, truck ownership, fuel and maintenance, and companies. |
+| **[XS-MultiCharacter](https://github.com/XyraL/XS-MultiCharacter)** | cinematic character selection for QBox and QBCore — identity dossiers, saved appearances, spawn cameras and configurable slots. |
 
 ## License
 

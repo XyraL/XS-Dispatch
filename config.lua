@@ -93,7 +93,7 @@ Config.Radio = {
 
 Config.IntegrationStudio = {
     enabled = true,
-    adminAce = 'cipher.dispatch.integrations',
+    adminAce = 'xs.dispatch.integrations',
     saveFile = 'data/integrations.json',
 }
 

@@ -40,14 +40,14 @@ local function usableIdentity(value)
 end
 
 local function resolveIdentity(src, pd, dept)
-    -- Native Cipher MDT fast path. This is evaluated on every resolution, so
+    -- Native XS-MDT fast path. This is evaluated on every resolution, so
     -- either resource may be restarted without losing the adapter.
-    if GetResourceState('cipher-mdt') == 'started' then
-        local ok, result = pcall(function() return exports['cipher-mdt']:GetDispatchIdentity(src) end)
+    if GetResourceState('XS-MDT') == 'started' then
+        local ok, result = pcall(function() return exports['XS-MDT']:GetDispatchIdentity(src) end)
         if ok and type(result) == 'table' and usableIdentity(result.callsign) then
             return {
                 callsign = usableIdentity(result.callsign), badge = usableIdentity(result.badge),
-                unitType = result.unitType or 'field', source = 'cipher-mdt',
+                unitType = result.unitType or 'field', source = 'XS-MDT',
             }
         end
     end
@@ -145,7 +145,7 @@ local function sanitizeCall(data, creator)
         sprite = tonumber(data.sprite or preset.sprite) or 280,
         color = tonumber(data.color or preset.color) or 1,
         status = 'active', notes = {}, units = {}, createdAt = os.time(), updatedAt = os.time(),
-        origin = tostring(data.origin or 'cipher-dispatch'), externalId = data.externalId,
+        origin = tostring(data.origin or 'XS-Dispatch'), externalId = data.externalId,
         providerRevision = tonumber(data.providerRevision) or 0, revision = 1,
         operation = {
             id = ('OP-%04d'):format(Sequence),
@@ -175,7 +175,7 @@ local function pushState()
         if dept then
             local result = publicState(dept)
             result.canManageIntegrations = Config.IntegrationStudio.enabled and IsPlayerAceAllowed(src, Config.IntegrationStudio.adminAce)
-            TriggerClientEvent('cipher-dispatch:client:state', src, result)
+            TriggerClientEvent('XS-Dispatch:client:state', src, result)
         end
     end
 end
@@ -190,7 +190,7 @@ local function pushDelta(kind, payload)
             elseif kind:find('call:', 1, true) == 1 then
                 allowed = departmentSet(payload.departments)[dept] == true
             end
-            if allowed then TriggerClientEvent('cipher-dispatch:client:delta', src, { kind = kind, payload = payload }) end
+            if allowed then TriggerClientEvent('XS-Dispatch:client:delta', src, { kind = kind, payload = payload }) end
         end
     end
 end
@@ -202,9 +202,9 @@ local function createCall(data, creator)
     local call, err = sanitizeCall(data, creator)
     if not call then return nil, err end
     Calls[call.id] = call
-    for _, src in ipairs(recipients(call.departments)) do TriggerClientEvent('cipher-dispatch:client:newCall', src, call) end
+    for _, src in ipairs(recipients(call.departments)) do TriggerClientEvent('XS-Dispatch:client:newCall', src, call) end
     pushState()
-    TriggerEvent('cipher-dispatch:server:callCreated', call)
+    TriggerEvent('XS-Dispatch:server:callCreated', call)
     pushDelta('call:upsert', call); saveState()
     return call.id, call
 end
@@ -222,7 +222,7 @@ exports('UpdateCall', function(id, patch)
     local call = Calls[tostring(id)]
     if not call or type(patch) ~= 'table' then return false end
     for _, key in ipairs({ 'title', 'description', 'priority', 'street', 'fields' }) do if patch[key] ~= nil then call[key] = patch[key] end end
-    call.updatedAt = os.time(); call.revision = (call.revision or 0) + 1; pushDelta('call:upsert', call); TriggerEvent('cipher-dispatch:server:callUpdated', call); saveState(); return true, call
+    call.updatedAt = os.time(); call.revision = (call.revision or 0) + 1; pushDelta('call:upsert', call); TriggerEvent('XS-Dispatch:server:callUpdated', call); saveState(); return true, call
 end)
 exports('SetCallStatus', function(source, id, status)
     local call = Calls[tostring(id)]
@@ -235,11 +235,11 @@ exports('SetCallStatus', function(source, id, status)
             if Units[cid] then Units[cid].callId, Units[cid].operationId, Units[cid].radioChannel = nil, nil, nil end
         end
         pushDelta('call:remove', call)
-        TriggerEvent('cipher-dispatch:server:callClosed', call, source)
+        TriggerEvent('XS-Dispatch:server:callClosed', call, source)
     else
         call.status = status
         pushDelta('call:upsert', call)
-        TriggerEvent('cipher-dispatch:server:callUpdated', call)
+        TriggerEvent('XS-Dispatch:server:callUpdated', call)
     end
     saveState(); return true
 end)
@@ -248,10 +248,10 @@ exports('AddCallNote', function(id, note)
     if not call then return false end
     local entry = type(note) == 'table' and note or { text = note }
     call.notes[#call.notes + 1] = { text = tostring(entry.text or ''), author = entry.author or 'Integration', createdAt = os.time() }
-    call.updatedAt = os.time(); call.revision = (call.revision or 0) + 1; pushDelta('call:upsert', call); TriggerEvent('cipher-dispatch:server:callUpdated', call); saveState(); return true
+    call.updatedAt = os.time(); call.revision = (call.revision or 0) + 1; pushDelta('call:upsert', call); TriggerEvent('XS-Dispatch:server:callUpdated', call); saveState(); return true
 end)
 
-lib.callback.register('cipher-dispatch:server:getState', function(source)
+lib.callback.register('XS-Dispatch:server:getState', function(source)
     local _, _, dept = playerInfo(source)
     if not dept then return nil end
     local result = publicState(dept)
@@ -259,7 +259,7 @@ lib.callback.register('cipher-dispatch:server:getState', function(source)
     return result
 end)
 
-lib.callback.register('cipher-dispatch:server:getProfile', function(source)
+lib.callback.register('XS-Dispatch:server:getProfile', function(source)
     local _, pd, dept = playerInfo(source)
     if not dept then return nil end
     local resolved = resolveIdentity(source, pd, dept)
@@ -267,7 +267,7 @@ lib.callback.register('cipher-dispatch:server:getProfile', function(source)
     return resolved
 end)
 
-lib.callback.register('cipher-dispatch:server:saveProfile', function(source, data)
+lib.callback.register('XS-Dispatch:server:saveProfile', function(source, data)
     local _, pd, dept = playerInfo(source)
     if not dept or type(data) ~= 'table' then return false, 'Unauthorized' end
     local callsign = tostring(data.callsign or ''):gsub('[^%w%-%s]', ''):sub(1, Config.Profiles.callsignMaxLength)
@@ -297,14 +297,14 @@ local function respondUnit(source, callId)
         Units[pd.citizenid].status = Config.AutoStatus.enRouteStatus
     end
     pushState()
-    TriggerEvent('cipher-dispatch:server:callUpdated', call)
+    TriggerEvent('XS-Dispatch:server:callUpdated', call)
     return true, call
 end
 
-lib.callback.register('cipher-dispatch:server:respond', respondUnit)
+lib.callback.register('XS-Dispatch:server:respond', respondUnit)
 exports('RespondUnit', respondUnit)
 
-lib.callback.register('cipher-dispatch:server:leaveCall', function(source, callId)
+lib.callback.register('XS-Dispatch:server:leaveCall', function(source, callId)
     local _, pd, dept = playerInfo(source)
     local call = Calls[tostring(callId)]
     if not dept or not call then return false end
@@ -313,10 +313,10 @@ lib.callback.register('cipher-dispatch:server:leaveCall', function(source, callI
         Units[pd.citizenid].callId, Units[pd.citizenid].operationId, Units[pd.citizenid].radioChannel = nil, nil, nil
         Units[pd.citizenid].status = Config.AutoStatus.availableByDepartment[dept] or Config.Departments[dept].statuses[1]
     end
-    call.updatedAt = os.time(); call.revision = (call.revision or 0) + 1; pushState(); TriggerEvent('cipher-dispatch:server:callUpdated', call); return true
+    call.updatedAt = os.time(); call.revision = (call.revision or 0) + 1; pushState(); TriggerEvent('XS-Dispatch:server:callUpdated', call); return true
 end)
 
-lib.callback.register('cipher-dispatch:server:clearCall', function(source, callId)
+lib.callback.register('XS-Dispatch:server:clearCall', function(source, callId)
     local _, _, dept = playerInfo(source)
     local call = Calls[tostring(callId)]
     if not dept or not call or not departmentSet(call.departments)[dept] then return false end
@@ -328,17 +328,17 @@ lib.callback.register('cipher-dispatch:server:clearCall', function(source, callI
             Units[cid].status = Config.AutoStatus.availableByDepartment[unitDept] or Config.Departments[unitDept].statuses[1]
         end
     end
-    pushState(); TriggerEvent('cipher-dispatch:server:callClosed', call, source)
+    pushState(); TriggerEvent('XS-Dispatch:server:callClosed', call, source)
     pushDelta('call:remove', call); saveState()
     return true
 end)
 
-lib.callback.register('cipher-dispatch:server:getIntegrations', function(source)
+lib.callback.register('XS-Dispatch:server:getIntegrations', function(source)
     if not Config.IntegrationStudio.enabled or not IsPlayerAceAllowed(source, Config.IntegrationStudio.adminAce) then return nil end
     return Integrations
 end)
 
-lib.callback.register('cipher-dispatch:server:saveIntegration', function(source, data)
+lib.callback.register('XS-Dispatch:server:saveIntegration', function(source, data)
     if not Config.IntegrationStudio.enabled or not IsPlayerAceAllowed(source, Config.IntegrationStudio.adminAce) then return false, 'Forbidden' end
     if type(data) ~= 'table' then return false, 'Invalid data' end
     local id = tostring(data.id or ''):lower():gsub('[^%w_%-]', ''):sub(1, 32)
@@ -354,7 +354,7 @@ lib.callback.register('cipher-dispatch:server:saveIntegration', function(source,
     saveIntegrations(); return true, Integrations[id]
 end)
 
-lib.callback.register('cipher-dispatch:server:deleteIntegration', function(source, id)
+lib.callback.register('XS-Dispatch:server:deleteIntegration', function(source, id)
     if not Config.IntegrationStudio.enabled or not IsPlayerAceAllowed(source, Config.IntegrationStudio.adminAce) then return false end
     id = tostring(id or '')
     if not Integrations[id] then return false end
@@ -372,15 +372,15 @@ local function setUnitStatus(source, status, skipProvider)
     Units[pd.citizenid].status, Units[pd.citizenid].updatedAt = status, os.time()
     pushState()
     if not skipProvider and DispatchProviders and DispatchProviders.PushUnitStatus then
-        DispatchProviders.PushUnitStatus(source, status, { origin='cipher-dispatch' })
+        DispatchProviders.PushUnitStatus(source, status, { origin='XS-Dispatch' })
     end
     return true
 end
 
-lib.callback.register('cipher-dispatch:server:setStatus', setUnitStatus)
+lib.callback.register('XS-Dispatch:server:setStatus', setUnitStatus)
 exports('SetUnitStatus', setUnitStatus)
 
-RegisterNetEvent('cipher-dispatch:server:position', function(data)
+RegisterNetEvent('XS-Dispatch:server:position', function(data)
     local src = source
     local _, pd, dept, name = playerInfo(src)
     if not dept or type(data) ~= 'table' then return end
@@ -398,7 +398,7 @@ RegisterNetEvent('cipher-dispatch:server:position', function(data)
     pushDelta('unit:upsert', unit)
 end)
 
-RegisterNetEvent('cipher-dispatch:server:panic', function()
+RegisterNetEvent('XS-Dispatch:server:panic', function()
     local src = source
     local _, pd, dept, name = playerInfo(src)
     if not dept or (panicCooldown[src] or 0) > os.time() then return end
@@ -408,7 +408,7 @@ RegisterNetEvent('cipher-dispatch:server:panic', function()
     createCall({ type = dept == 'police' and 'officer_backup' or (dept == 'ems' and 'medical' or 'fire'), title = name .. ' activated PANIC', description = 'Emergency activation from an on-duty responder.', priority = 1, departments = departments, coords = coords, caller = name }, src)
 end)
 
-RegisterNetEvent('cipher-dispatch:server:civilianCall', function(callType, message, street)
+RegisterNetEvent('XS-Dispatch:server:civilianCall', function(callType, message, street)
     if not Config.AllowCivilianCommands then return end
     local src = source
     if (civilianCooldown[src] or 0) > os.time() then return end
@@ -435,7 +435,7 @@ end)
 
 AddEventHandler('onResourceStop', function(resource) if resource == GetCurrentResourceName() then saveState() end end)
 
-CipherDispatchCore = {
+XSDispatchCore = {
     version = 1,
     createCall = createCall,
     getCall = function(id) return Calls[tostring(id)] end,

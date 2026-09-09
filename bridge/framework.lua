@@ -6,7 +6,7 @@ local kind, core
 local function detect()
     if GetResourceState('qbx_core') == 'started' then kind = 'qbox'
     elseif GetResourceState('qb-core') == 'started' then kind = 'qbcore'; core = exports['qb-core']:GetCoreObject()
-    else error(('[cipher-dispatch] No supported framework found on %s.'):format(side)) end
+    else error(('[XS-Dispatch] No supported framework found on %s.'):format(side)) end
 end
 
 detect()

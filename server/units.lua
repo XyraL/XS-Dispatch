@@ -23,7 +23,7 @@ local function safeCapabilities(values)
     return result
 end
 
-lib.callback.register('cipher-dispatch:server:createUnit', function(source, data)
+lib.callback.register('XS-Dispatch:server:createUnit', function(source, data)
     local cid, pd = identity(source)
     if not cid or type(data) ~= 'table' then return false end
     local department = departmentFor(pd)
@@ -37,24 +37,24 @@ lib.callback.register('cipher-dispatch:server:createUnit', function(source, data
         members = { [cid] = { source = source, role = 'leader' } },
         createdAt = os.time(),
     }
-    CipherDispatchCore.setUnitData(cid, { teamId = id, callsign = Teams[id].callsign, capabilities = Teams[id].capabilities })
+    XSDispatchCore.setUnitData(cid, { teamId = id, callsign = Teams[id].callsign, capabilities = Teams[id].capabilities })
     return true, Teams[id]
 end)
 
-lib.callback.register('cipher-dispatch:server:joinUnit', function(source, id)
+lib.callback.register('XS-Dispatch:server:joinUnit', function(source, id)
     local cid, pd = identity(source); local team = Teams[tostring(id)]
     if not cid or not team or departmentFor(pd) ~= team.department then return false end
     team.members[cid] = { source = source, role = 'member' }
-    CipherDispatchCore.setUnitData(cid, { teamId = team.id, callsign = team.callsign, capabilities = team.capabilities })
+    XSDispatchCore.setUnitData(cid, { teamId = team.id, callsign = team.callsign, capabilities = team.capabilities })
     return true, team
 end)
 
-lib.callback.register('cipher-dispatch:server:leaveUnit', function(source)
+lib.callback.register('XS-Dispatch:server:leaveUnit', function(source)
     local cid = identity(source)
     if not cid then return false end
     for id, team in pairs(Teams) do
         if team.members[cid] then
-            team.members[cid] = nil; CipherDispatchCore.setUnitData(cid, { teamId = false, capabilities = {} })
+            team.members[cid] = nil; XSDispatchCore.setUnitData(cid, { teamId = false, capabilities = {} })
             if not next(team.members) then Teams[id] = nil end
             return true
         end
