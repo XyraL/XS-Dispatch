@@ -5,6 +5,7 @@
 <p align="center">
   <a href="https://github.com/XyraL/XS-Dispatch/releases"><img src="https://img.shields.io/github/v/release/XyraL/XS-Dispatch?style=flat-square&color=55e2ad&label=release" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/framework-QBox%20%7C%20QBCore-55dcff?style=flat-square" alt="framework">
+  <img src="https://img.shields.io/badge/status-beta-f5a524?style=flat-square" alt="status: beta">
   <img src="https://img.shields.io/badge/price-free-30d158?style=flat-square" alt="price">
   <a href="https://discord.gg/XRURAw4TM2"><img src="https://img.shields.io/badge/support-discord-5865F2?style=flat-square" alt="support"></a>
 </p>
@@ -15,6 +16,9 @@
 </p>
 
 ---
+
+> **Beta.** Still being worked on, so expect rough edges. If you hit one, tell
+> me on [Discord](https://discord.gg/XRURAw4TM2) and I will get it sorted.
 
 ## Features
 
